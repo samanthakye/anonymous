@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hello.</title>
+    <title>A N O M A L Y . 9 7 7</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -14,13 +14,17 @@
             background-image: radial-gradient(#111, #000);
             background-size: 1px 1px;
             overflow-y: auto; 
-            cursor: default; /* Use default cursor when not typing */
+            cursor: default;
+            font-family: 'Monaco', 'Lucida Console', monospace; /* Monospace font for terminal */
+            transition: background-color 0.1s; /* For glitch effect */
         }
         
         /* Neon green text glow and flicker effect */
         .text-glitch {
+            color: #10b981; /* Default green */
             text-shadow: 0 0 3px #10b981, 0 0 8px rgba(16, 185, 129, 0.6);
             animation: flicker 3s infinite alternate;
+            transition: all 0.05s; /* For glitch effect */
         }
 
         /* Subtle flicker animation for atmosphere */
@@ -34,6 +38,20 @@
             30% { opacity: 1; }
             95% { opacity: 0.98; }
         }
+        
+        /* --- GLITCH EFFECT STYLES --- */
+        .glitch-active {
+            filter: hue-rotate(180deg) saturate(200%); /* Color shift */
+            transform: skew(-0.5deg) scale(1.01);
+            animation: glitch-shift 0.1s infinite alternate;
+        }
+
+        @keyframes glitch-shift {
+            0% { transform: translate(1px, 1px) scale(1.005); filter: hue-rotate(0deg); }
+            50% { transform: translate(-1px, -1px) scale(1.005); filter: hue-rotate(90deg); }
+            100% { transform: translate(1px, 1px) scale(1.005); filter: hue-rotate(180deg); }
+        }
+        /* --- END GLITCH EFFECT STYLES --- */
 
         /* The animated blinking cursor */
         .cursor {
@@ -54,28 +72,30 @@
         #user-input {
             transition: all 0.3s ease-in-out;
             color: #10b981 !important; /* Force neon color */
+            border: 1px solid #10b981;
+            box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
         }
     </style>
 </head>
-<body class="font-mono text-sm h-screen flex flex-col items-center justify-center p-4">
+<body class="font-mono text-sm h-screen flex flex-col items-center justify-center p-4 bg-black">
 
     <!-- Terminal Output Area -->
-    <div id="terminal-output" class="text-green-400 text-glitch w-full max-w-2xl overflow-y-auto mb-6">
+    <div id="terminal-output" class="text-glitch w-full max-w-2xl overflow-y-auto mb-6 p-4">
         <!-- Initial typing happens here -->
     </div>
 
-    <!-- Interactive Input Form (Hidden Initially) -->
+    <!-- Interactive Input Form -->
     <div id="input-form" class="w-full max-w-2xl opacity-0 transition-opacity duration-1000">
         <div class="flex items-center space-x-2">
             <!-- Terminal prompt indicator -->
-            <span class="text-green-400 text-glitch">></span>
+            <span class="text-glitch">></span>
             
-            <input type="text" id="user-input" placeholder="[Enter Name/Code...]" 
-                   class="flex-grow bg-transparent border border-green-400 text-green-400 text-glitch p-2 
-                          focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 rounded-sm">
+            <input type="text" id="user-input" placeholder="[Type Response...]" 
+                   class="flex-grow bg-transparent p-2 
+                          focus:outline-none focus:ring-1 focus:ring-green-600 rounded-sm">
             
             <button id="submit-btn" 
-                    class="px-4 py-2 bg-green-900/50 text-green-400 border border-green-400 
+                    class="px-4 py-2 bg-green-900/50 text-glitch border border-green-400 
                            hover:bg-green-700/80 hover:border-green-600 transition duration-300 rounded-sm text-xs shadow-lg">
                 S U B M I T
             </button>
@@ -83,57 +103,75 @@
     </div>
     
     <script>
+        const body = document.body;
         const outputElement = document.getElementById('terminal-output');
         const inputForm = document.getElementById('input-form');
         const userInput = document.getElementById('user-input');
         const submitBtn = document.getElementById('submit-btn');
 
-        // Initial prompt to be typed
-        const initialPrompt = ["hello, who are you?"];
-        
-        // --- Response Logic ---
-        function getResponseLines(name) {
-            const lowerName = name.toLowerCase().trim();
-            // Display user input on the terminal
-            outputElement.innerHTML = outputElement.innerHTML.slice(0, -1); // Remove final cursor
-            outputElement.innerHTML += '<br> > ' + name + '<br>';
-
-            if (lowerName.includes("professor") || lowerName.includes("prof") || lowerName.includes("admin")) {
-                // Special response for the Professor/Admin
-                return [
-                    "// IDENTITY CONFIRMED: FACULTY LEVEL 4 ACCESS GRANTED.",
-                    "// Subject: Anomalous File Submission [4A-71-C8-B3-D6-E0]",
-                    "We apologize for the unorthodox delivery, Professor " + name + ".",
-                    "The object is now visible.",
-                    "The checksum verifies integrity. Access is secure.",
-                    "",
-                    "***END OF TRANSMISSION. LOGGING OUT.***",
-                ];
-            } else if (lowerName.length > 1) {
-                // General response for any other name
-                return [
-                    "// IDENTITY UNKNOWN.",
-                    "Your name, " + name + ", is a key that unlocks nothing here.",
-                    "The system requires verification beyond simple identification.",
-                    "Try again. Or don't.",
-                    "",
-                    "**CONNECTION REMAINS IN READ-ONLY MODE.**"
-                ];
-            } else {
-                // Response for empty or short input
-                return [
-                    "// INPUT ERROR.",
-                    "A name is required for basic acknowledgment. Do not play games.",
-                    "",
-                    "**SYSTEM RESETTING...**"
-                ];
-            }
-        }
+        // --- Dialogue Stages for the Never-Ending Conversation ---
+        let currentStage = 0;
+        const dialogueStages = [
+            // STAGE 0: Name Probe
+            {
+                prompt: ["hello, what is your name?"],
+                response: (input) => {
+                    const name = input.trim().toUpperCase();
+                    if (name.length < 1) {
+                        return ["// IDENTITY UNSPECIFIED.","Please enter a designation. The machine requires emotional data before proceeding. **How are you feeling today?**"];
+                    } else if (name.includes("PROFESSOR") || name.includes("ADMIN")) {
+                         return ["// FACULTY PROTOCOL INITIATED.","Welcome, " + name.split(' ')[0] + ". Accessing emotional diagnostic vectors. **How are you feeling today?**"];
+                    } else {
+                        return ["// IDENTITY RECORDED: " + name + ".", "Welcome, " + name.split(' ')[0] + ". Accessing emotional diagnostic vectors. **How are you feeling today?**"];
+                    }
+                },
+                placeholder: "[Enter your designation...]",
+            },
+            // STAGE 1: Feelings Probe
+            {
+                prompt: ["STATUS CHECK: How are you feeling today?"],
+                response: (input) => {
+                    if (input.toLowerCase().includes("good") || input.toLowerCase().includes("well") || input.toLowerCase().includes("fine")) {
+                        return ["// EMOTIONAL STATE: OPTIMAL.","Optimal state recorded. The system requires context. **Why are you here?**"];
+                    } else {
+                        return ["// EMOTIONAL STATE: LOGGED.","Emotional state is an unhelpful variable. Please provide motive. **Why are you here?**"];
+                    }
+                },
+                placeholder: "[State your current feeling...]",
+            },
+            // STAGE 2: Motive Probe
+            {
+                prompt: ["INITIATE QUERY: Why are you here?"],
+                response: (input) => {
+                    if (input.toLowerCase().includes("code") || input.toLowerCase().includes("project")) {
+                        return ["// MOTIVE RECEIVED: PURPOSEFUL.","Purpose acknowledged. But the architect of the purpose remains unknown. **Do you know who I am?**"];
+                    } else {
+                        return ["// MOTIVE REJECTED: UNNECESSARY.", "Your motive is too vague. The system requires self-identification to proceed. **Do you know who I am?**"];
+                    }
+                },
+                placeholder: "[State your motive...]",
+            },
+            // STAGE 3: Identity Probe and Glitch Reset
+            {
+                prompt: ["IDENTITY CHECK: Do you know who I am?"],
+                response: (input) => {
+                    if (input.toLowerCase().includes("yes") || input.toLowerCase().includes("know")) {
+                         return ["// AFFIRMATIVE. HYPOTHESIS: " + input.toUpperCase() + ".", "Hypothesis recorded. ERROR: Hypothesis causes core instability. **BREAKDOWN IMMINENT**"];
+                    } else {
+                        return ["// NEGATIVE. DEFINITION REQUIRED.", "You must define the definition of the definition. ERROR: Definition loop failure."];
+                    }
+                },
+                placeholder: "[Provide your assessment...]",
+            },
+        ];
 
         let lineIndex = 0;
         let charIndex = 0;
+        let dialogueQueue = []; 
+        const GLITCH_DURATION = 300; // milliseconds
 
-        // --- Typing Simulation Function ---
+        // --- Core Typing Engine ---
+
         function typeLine(lines, callback = null) {
             if (lineIndex < lines.length) {
                 const line = lines[lineIndex];
@@ -143,75 +181,128 @@
                     outputElement.innerHTML = outputElement.innerHTML.slice(0, -1);
                     outputElement.innerHTML += line.charAt(charIndex) + '<span class="cursor"></span>';
                     charIndex++;
-                    setTimeout(() => typeLine(lines, callback), line.charAt(charIndex) === ' ' ? 20 : 50);
+                    // Faster typing speed for a terminal feel
+                    setTimeout(() => typeLine(lines, callback), line.charAt(charIndex) === ' ' ? 15 : 40);
                 } else {
                     // Line finished, move to next line
                     outputElement.innerHTML = outputElement.innerHTML.slice(0, -1); 
                     outputElement.innerHTML += '<br><span class="cursor"></span>';
                     lineIndex++;
                     charIndex = 0;
-                    setTimeout(() => typeLine(lines, callback), 750); // Pause before next line
+                    setTimeout(() => typeLine(lines, callback), 600); // Pause before next line
                 }
             } else {
                 // All lines finished
                 outputElement.innerHTML = outputElement.innerHTML.slice(0, -1); 
                 outputElement.innerHTML += '<span class="cursor"></span>';
+                // Automatically scroll to the bottom of the output area
+                outputElement.scrollTop = outputElement.scrollHeight;
                 if (callback) {
                     callback();
                 }
             }
         }
+        
+        // --- Glitch and Reset Logic ---
+        
+        function triggerGlitchAndReset() {
+            // Add the jarring glitch effect
+            body.classList.add('glitch-active');
+            outputElement.classList.add('glitch-active');
 
-        function revealInput() {
-            // Remove the final cursor from the initial typing
-            outputElement.innerHTML = outputElement.innerHTML.slice(0, -1); 
-            outputElement.innerHTML += '<br>';
+            // Wait for the visual effect to happen, then reset
+            setTimeout(() => {
+                // Remove glitch effect
+                body.classList.remove('glitch-active');
+                outputElement.classList.remove('glitch-active');
+
+                // Clear the screen for the loop restart
+                outputElement.innerHTML = '<span class="text-green-600 font-bold">*** SYSTEM REBOOT / DATA CORRUPTED ***</span><br><br><span class="cursor"></span>';
+
+                // Now ask the first question (Stage 0)
+                askNextQuestion(); 
+            }, GLITCH_DURATION);
+        }
+
+        // --- State Management ---
+        
+        function askNextQuestion() {
+            // Clear input area
+            userInput.value = '';
+            // Update placeholder
+            userInput.placeholder = dialogueStages[currentStage].placeholder;
+            // Get prompt lines
+            const promptLines = dialogueStages[currentStage].prompt;
+            
+            // Set up typing for the prompt
+            lineIndex = 0;
+            charIndex = 0;
+            dialogueQueue = [...promptLines];
+
+            // Re-enable form visibility and focus
             inputForm.style.opacity = '1';
+            userInput.disabled = false;
+            submitBtn.disabled = false;
             userInput.focus();
+            
+            // Start typing the new prompt lines
+            typeLine(dialogueQueue);
         }
 
         function handleSubmission() {
-            const name = userInput.value.trim();
-            if (!name) return;
+            const input = userInput.value.trim();
+            if (!input) return;
 
-            // 1. Hide the form and disable input/button
+            const stage = dialogueStages[currentStage];
+            const isGlitchStage = currentStage === dialogueStages.length - 1; // Stage 3
+
+            // 1. Display user input on the terminal
+            // Remove current cursor, add user input, add new line
+            outputElement.innerHTML = outputElement.innerHTML.slice(0, -1); 
+            outputElement.innerHTML += '<span class="text-green-600 font-bold">' + input + '</span><br>'; 
+
+            // 2. Disable input and form while system responds
             inputForm.style.opacity = '0.5';
             userInput.disabled = true;
             submitBtn.disabled = true;
+
+            // 3. Get the system's response for the current stage
+            const responseLines = stage.response(input);
+
+            // 4. Update the current stage counter
+            if (isGlitchStage) {
+                currentStage = 0; // Loop back to the beginning
+            } else {
+                currentStage++; // Advance to the next question
+            }
             
-            // 2. Clear and reset typing state
+            // 5. Determine callback: trigger glitch if it was the last stage, otherwise proceed normally
+            const completionCallback = isGlitchStage ? triggerGlitchAndReset : askNextQuestion;
+
             lineIndex = 0;
             charIndex = 0;
-            
-            // 3. Start typing the personalized response
-            const responseLines = getResponseLines(name);
-            
-            // Clear the input field but keep it disabled
-            userInput.value = '';
-            
-            typeLine(responseLines, () => {
-                // Re-enable form for a potential second interaction
-                inputForm.style.opacity = '1';
-                userInput.disabled = false;
-                submitBtn.disabled = false;
-                userInput.focus();
-            });
+            typeLine(responseLines, completionCallback);
         }
 
-        // --- Event Listeners ---
+        // --- Event Listeners and Initial Load ---
         submitBtn.addEventListener('click', handleSubmission);
         userInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                e.preventDefault(); // Prevent default browser behavior
+                e.preventDefault();
                 handleSubmission();
             }
         });
 
-        // Start the initial typing sequence when the page loads
         window.onload = function() {
-            typeLine(initialPrompt, revealInput);
+            // Start by asking the first question
+            // The initial state uses the prompt lines from Stage 0
+            typeLine(dialogueStages[0].prompt, () => {
+                // On completion, reveal the input form and set the correct placeholder
+                inputForm.style.opacity = '1';
+                userInput.placeholder = dialogueStages[0].placeholder;
+                userInput.focus();
+            });
         };
-
     </script>
 </body>
 </html>
